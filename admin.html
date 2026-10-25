@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AICTE Admin Verification Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8 font-sans">
+  <div class="max-w-5xl mx-auto space-y-8">
+    
+    <header class="bg-blue-900 text-white p-6 rounded-lg shadow">
+      <h1 class="text-2xl font-bold">AICTE Central Verification & Monitoring Portal</h1>
+      <p class="text-sm text-blue-200">Admin Control Center</p>
+    </header>
+
+    <!-- Section 1: Pending Approvals -->
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-xl font-bold mb-4 text-gray-800">Pending College Approvals</h2>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-100 text-gray-700">
+            <th class="p-3 border">College Name</th>
+            <th class="p-3 border">AISHE Code</th>
+            <th class="p-3 border">Status</th>
+            <th class="p-3 border">Action</th>
+          </tr>
+        </thead>
+        <tbody id="collegesTable"></tbody>
+      </table>
+    </div>
+
+    <!-- Section 2: Live Synced Database -->
+    <div class="bg-white p-6 rounded-lg shadow">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800">Live Synced Student Database</h2>
+        <button onclick="loadStudents()" class="bg-gray-200 hover:bg-gray-300 text-xs px-3 py-1 rounded">Refresh Table</button>
+      </div>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-100 text-gray-700">
+            <th class="p-3 border">Student Name</th>
+            <th class="p-3 border">APAAR ID</th>
+            <th class="p-3 border">College</th>
+            <th class="p-3 border">Course</th>
+            <th class="p-3 border">Synced At</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTable"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script>
+    async function loadColleges() {
+      const res = await fetch('/api/admin/colleges');
+      const data = await res.json();
+      const tbody = document.getElementById('collegesTable');
+      tbody.innerHTML = data.map(c => `
+        <tr class="border-b">
+          <td class="p-3">${c.name}</td>
+          <td class="p-3 font-mono">${c.aisheCode}</td>
+          <td class="p-3">
+            <span class="px-2 py-1 text-xs font-bold rounded ${c.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+              ${c.status}
+            </span>
+          </td>
+          <td class="p-3 flex items-center gap-2">
+            ${c.status === 'PENDING' 
+              ? `<button onclick="approveCollege('${c.aisheCode}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">Verify & Issue Key</button>`
+              : `<span class="text-xs text-gray-500 font-mono">Key: ${c.apiKey}</span>
+                 <button onclick="revokeCollege('${c.aisheCode}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700">Revoke / Reset</button>`
+            }
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function approveCollege(aisheCode) {
+      const res = await fetch('/api/admin/approve-college', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aisheCode })
+      });
+      const data = await res.json();
+      alert('Approved! API Key: ' + data.apiKey);
+      loadColleges();
+    }
+
+    async function revokeCollege(aisheCode) {
+      const res = await fetch('/api/admin/revoke-college', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aisheCode })
+      });
+      const data = await res.json();
+      alert(data.message);
+      loadColleges();
+    }
+
+    async function loadStudents() {
+      const res = await fetch('/api/admin/students');
+      const data = await res.json();
+      const tbody = document.getElementById('studentsTable');
+      tbody.innerHTML = data.map(s => `
+        <tr class="border-b">
+          <td class="p-3 font-semibold">${s.name}</td>
+          <td class="p-3 font-mono">${s.apaarId}</td>
+          <td class="p-3">${s.collegeName}</td>
+          <td class="p-3">${s.course}</td>
+          <td class="p-3 text-sm text-gray-500">${s.syncedAt}</td>
+        </tr>
+      `).join('');
+    }
+
+    loadColleges();
+    loadStudents();
+    setInterval(loadStudents, 3000); // Auto refresh every 3s
+  </script>
+</body>
+</html>

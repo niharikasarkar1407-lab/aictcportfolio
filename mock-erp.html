@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>College ERP Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8 font-sans">
+  <div class="max-w-xl mx-auto bg-gray-800 p-6 rounded-lg shadow-xl space-y-6">
+    
+    <div class="border-b border-gray-700 pb-4">
+      <h1 class="text-xl font-bold text-green-400">Mock College ERP Software</h1>
+      <p class="text-xs text-gray-400">Simulating TCS iON / CollPoll Outbound Sync</p>
+    </div>
+
+    <!-- ERP Settings -->
+    <div class="space-y-3 bg-gray-900 p-4 rounded border border-gray-700">
+      <h2 class="text-sm font-semibold text-gray-300">Integration Configuration</h2>
+      <div>
+        <label class="block text-xs text-gray-400">API Endpoint URL</label>
+        <input id="endpointInput" type="text" value="http://localhost:5000/api/v1/students/sync" class="w-full p-2 bg-gray-800 border border-gray-600 rounded text-sm font-mono text-white">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400">AICTE Secret API Key</label>
+        <input id="apiKeyInput" type="text" placeholder="Paste Generated API Key Here" class="w-full p-2 bg-gray-800 border border-gray-600 rounded text-sm font-mono text-yellow-300">
+      </div>
+    </div>
+
+    <!-- Student Form -->
+    <div class="space-y-3 bg-gray-900 p-4 rounded border border-gray-700">
+      <h2 class="text-sm font-semibold text-gray-300">New Admission Entry</h2>
+      <input id="nameInput" type="text" value="Aarav Mehta" placeholder="Student Name" class="w-full p-2 bg-gray-800 border border-gray-600 rounded text-sm text-white">
+      <input id="apaarInput" type="text" value="APAAR-2026-7788" placeholder="APAAR ID" class="w-full p-2 bg-gray-800 border border-gray-600 rounded text-sm font-mono text-white">
+      <input id="courseInput" type="text" value="B.Tech IT" placeholder="Course" class="w-full p-2 bg-gray-800 border border-gray-600 rounded text-sm text-white">
+    </div>
+
+    <button onclick="pushData()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded text-sm shadow">
+      🚀 PUSH DATA TO AICTE PORTAL
+    </button>
+
+    <!-- Response Window -->
+    <div class="bg-black p-4 rounded border border-gray-800">
+      <p class="text-xs text-gray-500 mb-1">Server Response:</p>
+      <pre id="responseLog" class="text-xs font-mono text-gray-400 whitespace-pre-wrap">Awaiting trigger...</pre>
+    </div>
+
+  </div>
+
+  <script>
+    async function pushData() {
+      const endpoint = document.getElementById('endpointInput').value;
+      const apiKey = document.getElementById('apiKeyInput').value;
+      const name = document.getElementById('nameInput').value;
+      const apaarId = document.getElementById('apaarInput').value;
+      const course = document.getElementById('courseInput').value;
+      const log = document.getElementById('responseLog');
+
+      log.innerText = "Sending request...";
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey
+          },
+          body: JSON.stringify({ name, apaarId, course })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          log.className = "text-xs font-mono text-green-400 whitespace-pre-wrap";
+          log.innerText = `[SUCCESS ${response.status}]\n` + JSON.stringify(result, null, 2);
+        } else {
+          log.className = "text-xs font-mono text-red-400 whitespace-pre-wrap";
+          log.innerText = `[ERROR ${response.status}]\n` + JSON.stringify(result, null, 2);
+        }
+      } catch (err) {
+        log.className = "text-xs font-mono text-red-400 whitespace-pre-wrap";
+        log.innerText = "Failed to connect to server: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
